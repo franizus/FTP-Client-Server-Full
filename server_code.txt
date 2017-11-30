@@ -3,10 +3,10 @@ import sys
 import pymysql
 
 
-def send(dbcon, connection, address, line, i):
-    connection.send(line.encode('ascii'))
+def send(dbcon, connection, address, line, log, i):
+    connection.send(line)
     add = addr[0] + ':' + str(addr[1])
-    insertToDB(dbcon, "server_code.txt", add, i)
+    connectToDB(dbcon, "server_code.txt", add, i)
 
 def connectToDB():
     try:
@@ -23,7 +23,7 @@ def insertToDB(con, filename, address, linea):
     con.commit()
 
 HOST = ''   # Symbolic name, meaning all available interfaces
-PORT = 8889 # Arbitrary non-privileged port
+PORT = 8888 # Arbitrary non-privileged port
 CONDB = connectToDB()
  
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -48,13 +48,14 @@ connectToDB()
 print('Connected with ' + addr[0] + ':' + str(addr[1]))
 
 file = open("server_code.txt", "r")
+log = open("log.txt", "w")
 i = 0
 
 for line in file:
-    send(CONDB, conn, addr, line, i)
+    send(CONDB, conn, addr, line, log, i)
     i += 1
 else:
-    conn.send("file finished".encode('ascii'))
+    conn.send("file finished")
 
 file.close()
 s.close()
