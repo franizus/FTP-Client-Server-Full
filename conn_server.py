@@ -15,17 +15,16 @@ def broadcast_connected_clients(socket):
     for key in CONNECTION_DICT:
         sock = CONNECTION_DICT.get(key)
         if sock != s and sock != CONNECTION_DICT.get(client):
-            socket.send(('\r' + key + ' se encuentra en el chat\n').encode('ascii'))
+            socket.send(('\r' + key + ' se encuentra conectado.\n').encode('ascii'))
 
 
 def send_data(sender, receiver, message):
     if receiver in CONNECTION_DICT:
         sock = CONNECTION_DICT.get(receiver)
-        if sock != s and sock != CONNECTION_DICT.get(client):
-            sock.send(message.encode('ascii'))
+        sock.send(message.encode('ascii'))
     else:
         sock = CONNECTION_DICT.get(sender)
-        sock.send((receiver + ' no conectado.\n').encode('ascii'))
+        sock.send(('\r' + receiver + ' no conectado.\n').encode('ascii'))
 
 
 def listen_client(client, socket, direccion):
@@ -34,14 +33,15 @@ def listen_client(client, socket, direccion):
     broadcast_connected_clients(socket)
     while True:
         data = socket.recv(size).decode('ascii')
+        receiver, message = data.split(':')
         if data:
-            broadcast_data(client, '\r<' + client + '> ' + data)
+            send_data(client, receiver, '\r<' + client + '> ' + message)
 
 
 if __name__ == "__main__":
 
     HOST = ''   # Symbolic name, meaning all available interfaces
-    PORT = 8889 # Arbitrary non-privileged port
+    PORT = 8888 # Arbitrary non-privileged port
     CONNECTION_LIST = []
     CONNECTION_DICT = {}
     CLIENT_COUNTER = 0
