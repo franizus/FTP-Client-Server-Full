@@ -3,36 +3,32 @@ import sys
 import threading
 
 
-def broadcastData(sock, message):
-    for socket in CONNECTION_LIST:
-        if socket != s and socket != sock:
-            try :
-                socket.send(message.encode('ascii'))
-            except :
-                socket.close()
-                CONNECTION_LIST.remove(socket)
-
-def escucharCliente(cliente, direccion):
-    size=1024
-    cliente.send('bienvenido al chat\n'.encode('ascii'))
+def receiveData(cliente, idc, lista):
+    size = 1024
     while True:
         data = cliente.recv(size).decode('ascii')
-        print(data + ' de ' + direccion[0] + ':' + str(direccion[1]))
         if data:
-            broadcastData(cliente, "\r" + '<' + str(cliente.getpeername()) + '> ' + data)
-        '''
-        if data: 
-            cliente.send(('Recivido ' + data).encode('ascii'))
-        else:
-            raise error('cliente desconectado')
-        '''
+            lista[idc].append(data)
+
+
+def sendData(cliente, idc, lista):
+    while True:
+        for i in range(len(lista)):
+            if i != idc:
+                if len(lista[i]) > 0:
+                    cliente.send(lista[i][-1].encode('ascii'))
+
+
+def escucharCliente(cliente, idc, lista):
+    cliente.send('bienvenido al chat\n'.encode('ascii'))
+    threading.Thread(target = receiveData, args = (cliente, idc, lista, )).start()
+    threading.Thread(target = sendData, args = (cliente, idc, lista, )).start()
 
 
 if __name__ == "__main__":
 
     HOST = ''   # Symbolic name, meaning all available interfaces
-    PORT = 8889 # Arbitrary non-privileged port
-    CONNECTION_LIST = []
+    PORT = 8888 # Arbitrary non-privileged port
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    
@@ -44,16 +40,17 @@ if __name__ == "__main__":
         sys.exit()
     
     threads = []
+    message_list = []
     #Start listening on socket
     s.listen(10) 
-    CONNECTION_LIST.append(s)
 
     #now keep talking with the client
+    client_id = 0
     while 1:
         #wait to accept a connection - blocking call
         conn, addr = s.accept()
-        CONNECTION_LIST.append(conn)
-        threads.append(threading.Thread(target = escucharCliente, args = (conn,addr, )).start())
-        broadcastData(conn, "[%s:%s] entered room\n" % addr)
+        message_list.append([])
+        threads.append(threading.Thread(target = escucharCliente, args = (conn, client_id, message_list, )).start())
+        client_id += 1
     
     s.close()
