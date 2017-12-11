@@ -4,13 +4,13 @@ import select
 
 
 def prompt():
-    sys.stdout.write('<Tu> ')
+    sys.stdout.write('>>> ')
     sys.stdout.flush()
 
 
 if __name__ == "__main__":
     if(len(sys.argv) < 3) :
-        print('Usage : python telnet.py hostname port')
+        print('Usage : python conn_client.py hostname port')
         sys.exit()
      
     host = sys.argv[1]
@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     while 1:
         socket_list = [sys.stdin, s]
-        read_sockets, write_sockets, error_sockets = select.select(socket_list , [], [])
+        read_sockets, ws, es = select.select(socket_list, [], [])
         for sock in read_sockets:
             if sock == s:
                 data = sock.recv(4096)

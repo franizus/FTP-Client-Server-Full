@@ -1,9 +1,10 @@
 import socket
 import sys
 import threading
+import select
 
 
-def broadcastData(sock, message):
+def broadcast_data(sock, message):
     for socket in CONNECTION_LIST:
         if socket != s and socket != sock:
             try :
@@ -12,20 +13,15 @@ def broadcastData(sock, message):
                 socket.close()
                 CONNECTION_LIST.remove(socket)
 
+
 def escucharCliente(cliente, direccion):
     size=1024
-    cliente.send('bienvenido al chat\n'.encode('ascii'))
+    cliente.send('Bienvenido al Chat\n'.encode('ascii'))
     while True:
         data = cliente.recv(size).decode('ascii')
         print(data + ' de ' + direccion[0] + ':' + str(direccion[1]))
         if data:
-            broadcastData(cliente, "\r" + '<' + str(cliente.getpeername()) + '> ' + data)
-        '''
-        if data: 
-            cliente.send(('Recivido ' + data).encode('ascii'))
-        else:
-            raise error('cliente desconectado')
-        '''
+            broadcast_data(cliente, "\r" + '<' + str(cliente.getpeername()) + '> ' + data)
 
 
 if __name__ == "__main__":
@@ -50,10 +46,12 @@ if __name__ == "__main__":
 
     #now keep talking with the client
     while 1:
-        #wait to accept a connection - blocking call
-        conn, addr = s.accept()
-        CONNECTION_LIST.append(conn)
-        threads.append(threading.Thread(target = escucharCliente, args = (conn,addr, )).start())
-        broadcastData(conn, "[%s:%s] entered room\n" % addr)
+        read_sockets,ws,es = select.select(CONNECTION_LIST,[],[])
+        for sock in read_sockets:
+            if sock == s:
+                conn, addr = s.accept()
+                CONNECTION_LIST.append(conn)
+                threads.append(threading.Thread(target = escucharCliente, args = (conn,addr, )).start())
+                broadcast_data(conn, "[%s:%s] entered room\n" % addr)
     
     s.close()
